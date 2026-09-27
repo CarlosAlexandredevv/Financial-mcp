@@ -6,6 +6,7 @@ import * as schema from "./schema";
 
 const globalForDb = globalThis as unknown as {
   client: ReturnType<typeof postgres> | undefined;
+  database: ReturnType<typeof drizzle<typeof schema>> | undefined;
 };
 
 function getDatabaseUrl() {
@@ -31,5 +32,17 @@ function getClient() {
   return globalForDb.client;
 }
 
-export const db = drizzle(getClient(), { schema });
-export type Database = typeof db;
+export function getDatabase() {
+  if (!globalForDb.database) {
+    globalForDb.database = drizzle(getClient(), { schema });
+  }
+
+  return globalForDb.database;
+}
+
+export async function closeDatabase() {
+  const client = globalForDb.client;
+  globalForDb.client = undefined;
+  globalForDb.database = undefined;
+  if (client) await client.end({ timeout: 5 });
+}
