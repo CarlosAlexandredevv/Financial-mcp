@@ -10,7 +10,7 @@ A superfície (app Next.js e endpoint MCP) só recebe pedidos. A fonte de verdad
 
 - Next.js (App Router) para a aplicação e o transporte MCP
 - PostgreSQL 17, subido com Docker Compose
-- Drizzle ORM (`src/db/schema.ts`, cliente em `src/db/index.ts`)
+- Drizzle ORM (`src/db/schema.ts`). Quem consulta e grava passa por `src/db.ts`; o cliente fica em `src/db/client.ts`
 - Segredos em `.env.local`. O modelo público fica em `.env.example`
 
 Scripts de banco: `db:generate`, `db:migrate`, `db:push`, `db:studio`.

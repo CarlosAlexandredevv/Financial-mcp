@@ -1,6 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
+import type { BalanceLoader } from "@/balance/balance";
+import { buscarSaldo } from "@/balance/balance";
+import { getBalance } from "@/balance/get-balance";
 import { addTransaction } from "@/transactions/add-transaction";
 import {
   formatAmount,
@@ -9,7 +12,11 @@ import {
 
 const GENERIC_WRITE_ERROR = "Não foi possível registrar o lançamento.";
 
-export function createFinancialMcpServer(ownerKey: string) {
+export function createFinancialMcpServer(
+  ownerKey: string,
+  deps: { loadBalance?: BalanceLoader } = {},
+) {
+  const loadBalance = deps.loadBalance ?? getBalance;
   const server = new McpServer({
     name: "financial-mcp",
     version: "0.1.0",
@@ -58,6 +65,18 @@ export function createFinancialMcpServer(ownerKey: string) {
         };
       }
     },
+  );
+
+  server.registerTool(
+    "buscar_saldo",
+    {
+      description:
+        "Informa o saldo do livro-caixa do dono autenticado. Sem ate, soma todo o histórico. Com ate em YYYY-MM-DD, soma os lançamentos ocorridos até essa data, inclusive.",
+      inputSchema: z.object({
+        ate: z.unknown().optional(),
+      }),
+    },
+    async (args) => buscarSaldo({ ownerKey, args, load: loadBalance }),
   );
 
   return server;
