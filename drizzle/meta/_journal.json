@@ -8,6 +8,13 @@
       "when": 1790465484387,
       "tag": "0000_nifty_micromax",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790634143569,
+      "tag": "0001_dashing_thena",
+      "breakpoints": true
     }
   ]
 }

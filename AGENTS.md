@@ -28,7 +28,8 @@ O cliente (browser ou modelo) manda critérios. O servidor monta a query, restri
 Conhecer a URL, o código ou o schema das tools não autoriza leitura nem escrita. Sem o segredo do ambiente, nenhuma tool financeira executa.
 
 - `DATABASE_URL` liga o servidor ao PostgreSQL. Não sai do servidor e não entra no git.
-- `MCP_ACCESS_SECRET` é o segredo que o cliente MCP apresenta no transporte (header ou mecanismo de auth do MCP), lido só no servidor. Sem correspondência, a chamada é recusada antes de qualquer query.
+- `MCP_ACCESS_SECRET` é o segredo que o cliente MCP apresenta no transporte (header ou mecanismo de auth do MCP), lido só no servidor. Sem correspondência, a chamada é recusada antes de qualquer query. O mesmo valor identifica o dono na tela de consentimento OAuth.
+- O Bearer do `/mcp` pode ser esse segredo ou o access token JWT emitido por este servidor (fluxo OAuth com `MCP_PUBLIC_URL` configurada).
 - O segredo identifica o dono dos dados. O servidor deriva o escopo a partir dele. Argumentos da tool não escolhem o dono e não podem ampliar o escopo.
 - Uma chamada autenticada enxerga e altera apenas as linhas daquele dono. Não existe operação que liste ou mova finanças de outra pessoa.
 - A comparação do segredo é em tempo constante. O valor não aparece em log, mensagem de erro nem resultado de tool.

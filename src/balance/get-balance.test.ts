@@ -1,12 +1,18 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
+import { config } from "dotenv";
 
 import { db } from "../db.ts";
 import { getBalance } from "./get-balance.ts";
 
+config({ path: ".env.local" });
+config({ path: ".env" });
+
+const dbTest = process.env.DATABASE_URL ? {} : { skip: "DATABASE_URL ausente" };
+
 test.after(async () => {
-  await db.close();
+  if (process.env.DATABASE_URL) await db.close();
 });
 
 async function insertLedger(ownerKey: string, rows: Array<{
@@ -25,7 +31,7 @@ async function insertLedger(ownerKey: string, rows: Array<{
   }
 }
 
-test("soma só o dono pedido e inclui o dia do corte", async () => {
+test("soma só o dono pedido e inclui o dia do corte", dbTest, async () => {
   const ownerA = `balance-test-${randomUUID()}`;
   const ownerB = `balance-test-${randomUUID()}`;
   try {
@@ -57,7 +63,7 @@ test("soma só o dono pedido e inclui o dia do corte", async () => {
   }
 });
 
-test("saldo negativo devolve centavos negativos", async () => {
+test("saldo negativo devolve centavos negativos", dbTest, async () => {
   const ownerKey = `balance-test-${randomUUID()}`;
   try {
     await insertLedger(ownerKey, [

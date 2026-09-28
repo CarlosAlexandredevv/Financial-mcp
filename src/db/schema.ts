@@ -11,6 +11,26 @@ import {
 
 export const transactionType = pgEnum("transaction_type", ["entrada", "saida"]);
 
+export const oauthClients = pgTable("oauth_clients", {
+  clientId: text("client_id").primaryKey(),
+  redirectUris: text("redirect_uris").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
+export const oauthCodes = pgTable("oauth_codes", {
+  codeHash: text("code_hash").primaryKey(),
+  clientId: text("client_id")
+    .notNull()
+    .references(() => oauthClients.clientId),
+  redirectUri: text("redirect_uri").notNull(),
+  codeChallenge: text("code_challenge").notNull(),
+  resource: text("resource").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" })
+    .notNull(),
+});
+
 export const transactions = pgTable(
   "transactions",
   {

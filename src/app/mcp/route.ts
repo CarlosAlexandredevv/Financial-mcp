@@ -1,20 +1,28 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 
-import { authorizeAccess } from "@/auth/access-secret";
+import { authorizeMcp } from "@/auth/oauth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 async function handleMcp(request: Request): Promise<Response> {
-  const decision = authorizeAccess(
-    request.headers.get("authorization"),
-    process.env.MCP_ACCESS_SECRET,
-  );
+  const decision = authorizeMcp({
+    authorizationHeader: request.headers.get("authorization"),
+    envSecret: process.env.MCP_ACCESS_SECRET,
+    publicUrl: process.env.MCP_PUBLIC_URL,
+    nowSeconds: Math.floor(Date.now() / 1000),
+  });
 
   if (!decision.ok) {
+    const headers: Record<string, string> = {
+      "content-type": "text/plain; charset=utf-8",
+    };
+    if (decision.wwwAuthenticate !== undefined) {
+      headers["WWW-Authenticate"] = decision.wwwAuthenticate;
+    }
     return new Response(decision.message, {
       status: 401,
-      headers: { "content-type": "text/plain; charset=utf-8" },
+      headers,
     });
   }
 
