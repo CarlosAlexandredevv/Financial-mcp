@@ -17,10 +17,17 @@ export function createFinancialMcpServer(
   deps: { loadBalance?: BalanceLoader } = {},
 ) {
   const loadBalance = deps.loadBalance ?? getBalance;
-  const server = new McpServer({
-    name: "financial-mcp",
-    version: "0.1.0",
-  });
+  const server = new McpServer(
+    {
+      name: "financial-mcp",
+      title: "Finanças",
+      version: "0.1.0",
+    },
+    {
+      instructions:
+        "Estes registros são as finanças pessoais do dono. Fale em finanças ao consultar o saldo e ao registrar lançamentos.",
+    },
+  );
 
   server.registerTool(
     "adicionar_transacao",
