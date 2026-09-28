@@ -1,12 +1,16 @@
 import "server-only";
-import { drizzle } from "drizzle-orm/postgres-js";
+import { neon } from "@neondatabase/serverless";
+import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
+import { drizzle as drizzlePostgres, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import * as schema from "./schema";
 
+type Database = PostgresJsDatabase<typeof schema>;
+
 const globalForDb = globalThis as unknown as {
   client: ReturnType<typeof postgres> | undefined;
-  database: ReturnType<typeof drizzle<typeof schema>> | undefined;
+  database: Database | undefined;
 };
 
 function getDatabaseUrl() {
@@ -21,20 +25,27 @@ function getDatabaseUrl() {
   return databaseUrl;
 }
 
-function getClient() {
-  if (!globalForDb.client) {
-    globalForDb.client = postgres(getDatabaseUrl(), {
-      prepare: false,
-      max: 10,
-    });
+function usesNeonHttp(url: string) {
+  try {
+    return new URL(url).hostname.endsWith("neon.tech");
+  } catch {
+    return false;
   }
-
-  return globalForDb.client;
 }
 
 export function getDatabase() {
   if (!globalForDb.database) {
-    globalForDb.database = drizzle(getClient(), { schema });
+    const url = getDatabaseUrl();
+    if (usesNeonHttp(url)) {
+      globalForDb.database = drizzleNeon(
+        neon(url, { fetchOptions: { cache: "no-store" } }),
+        { schema },
+      ) as unknown as Database;
+    } else {
+      const client = postgres(url, { prepare: false, max: 10 });
+      globalForDb.client = client;
+      globalForDb.database = drizzlePostgres(client, { schema });
+    }
   }
 
   return globalForDb.database;
