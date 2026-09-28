@@ -1,5 +1,9 @@
+import { createRequire } from "node:module";
 import type { ReactNode } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+
+const { renderToStaticMarkup } = createRequire(import.meta.url)(
+  "next/dist/compiled/react-dom/server.node.js",
+) as { renderToStaticMarkup: (node: ReactNode) => string };
 
 import type { AuthorizeParams } from "./oauth";
 
