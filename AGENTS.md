@@ -10,7 +10,7 @@ A superfície (app Next.js e endpoint MCP) só recebe pedidos. A fonte de verdad
 
 - Next.js (App Router) para a aplicação e o transporte MCP
 - PostgreSQL 17, subido com Docker Compose
-- Drizzle ORM (`src/db/schema.ts`). Quem consulta e grava passa por `src/db.ts`; o cliente fica em `src/db/client.ts`
+- Drizzle ORM (`src/db/schema.ts`). O cliente fica em `src/db/client.ts`. Cada domínio consulta e grava no próprio módulo de servidor.
 - Segredos em `.env.local`. O modelo público fica em `.env.example`
 
 Scripts de banco: `db:generate`, `db:migrate`, `db:push`, `db:studio`.
@@ -40,5 +40,5 @@ Ao adicionar uma tool, o portão do segredo e o filtro por dono vêm antes da qu
 ## Convenções
 
 - Tabelas novas entram em `src/db/schema.ts`. Gere a migração com Drizzle Kit; não altere o banco à mão.
-- Código que importa `db` fica em módulo de servidor.
+- Código que importa o cliente do banco fica em módulo de servidor.
 - Respostas ao modelo trazem o mínimo necessário para a pergunta, não dumps de lançamentos.

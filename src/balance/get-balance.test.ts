@@ -3,7 +3,11 @@ import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { config } from "dotenv";
 
-import { db } from "../db.ts";
+import { inArray } from "drizzle-orm";
+
+import { closeDatabase, getDatabase } from "../db/client.ts";
+import { transactions } from "../db/schema.ts";
+import { addTransaction } from "../transactions/add-transaction.ts";
 import { getBalance } from "./get-balance.ts";
 
 config({ path: ".env.local" });
@@ -12,7 +16,7 @@ config({ path: ".env" });
 const dbTest = process.env.DATABASE_URL ? {} : { skip: "DATABASE_URL ausente" };
 
 test.after(async () => {
-  if (process.env.DATABASE_URL) await db.close();
+  if (process.env.DATABASE_URL) await closeDatabase();
 });
 
 async function insertLedger(ownerKey: string, rows: Array<{
@@ -21,14 +25,23 @@ async function insertLedger(ownerKey: string, rows: Array<{
   occurredOn: string;
 }>) {
   for (const row of rows) {
-    await db.insertTransaction({
+    await addTransaction({
       ownerKey,
-      type: row.type,
-      amountCents: row.amountCents,
-      occurredOn: row.occurredOn,
-      description: "teste de saldo",
+      transaction: {
+        tipo: row.type,
+        amountCents: row.amountCents,
+        data: row.occurredOn,
+        descricao: "teste de saldo",
+      },
     });
   }
+}
+
+async function deleteByOwners(ownerKeys: string[]) {
+  if (ownerKeys.length === 0) return;
+  await getDatabase()
+    .delete(transactions)
+    .where(inArray(transactions.ownerKey, ownerKeys));
 }
 
 test("soma só o dono pedido e inclui o dia do corte", dbTest, async () => {
@@ -59,7 +72,7 @@ test("soma só o dono pedido e inclui o dia do corte", dbTest, async () => {
       saldoCents: 0n,
     });
   } finally {
-    await db.deleteByOwners([ownerA, ownerB]);
+    await deleteByOwners([ownerA, ownerB]);
   }
 });
 
@@ -72,6 +85,6 @@ test("saldo negativo devolve centavos negativos", dbTest, async () => {
     ]);
     assert.deepEqual(await getBalance({ ownerKey }), { saldoCents: -50n });
   } finally {
-    await db.deleteByOwners([ownerKey]);
+    await deleteByOwners([ownerKey]);
   }
 });
