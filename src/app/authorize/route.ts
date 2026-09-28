@@ -1,19 +1,17 @@
 import { createHash, randomBytes } from "node:crypto";
 
 import { authorizeAccess } from "@/auth/access-secret";
-import { decideAuthorize, type AuthorizeParams } from "@/auth/oauth";
+import { decideAuthorize } from "@/auth/oauth";
 import {
-  escapeHtml,
   oauthDisabledResponse,
   readIssuer,
   redirectWithOAuthParams,
 } from "@/auth/oauth-http";
+import { consentDocument, invalidRequestDocument } from "@/auth/consent-page";
 import { findOauthClient, insertOauthCode } from "@/auth/oauth-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const HTML_400 = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Solicitação inválida</title></head><body><p>Solicitação inválida.</p></body></html>`;
 
 function readQueryParams(
   searchParams: URLSearchParams,
@@ -31,49 +29,6 @@ function readFormParams(form: FormData): Record<string, string> {
     if (typeof value === "string") query[key] = value;
   }
   return query;
-}
-
-function consentHtml(
-  host: string,
-  loopback: boolean,
-  params: AuthorizeParams,
-  errorMessage?: string,
-): string {
-  const hidden = [
-    ["response_type", params.responseType],
-    ["client_id", params.clientId],
-    ["redirect_uri", params.redirectUri],
-    ["code_challenge", params.codeChallenge],
-    ["code_challenge_method", params.codeChallengeMethod],
-    ["resource", params.resource],
-    ["scope", params.scope],
-    ...(params.state === undefined ? [] : [["state", params.state]]),
-  ]
-    .map(
-      ([name, value]) =>
-        `<input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(value)}">`,
-    )
-    .join("");
-
-  const warning = loopback
-    ? "<p>Qualquer processo local pode ocupar esta porta.</p>"
-    : "";
-  const error = errorMessage === undefined
-    ? ""
-    : `<p>${escapeHtml(errorMessage)}</p>`;
-
-  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Autorizar acesso</title></head><body>
-<h1>Autorizar acesso</h1>
-<p>O aplicativo em <strong>${escapeHtml(host)}</strong> pede acesso às suas finanças.</p>
-${warning}
-${error}
-<form method="post">
-${hidden}
-<label for="secret">Segredo de acesso</label>
-<input id="secret" name="secret" type="password" autocomplete="current-password" required>
-<button type="submit">Autorizar</button>
-</form>
-</body></html>`;
 }
 
 async function handleAuthorize(
@@ -94,7 +49,7 @@ async function handleAuthorize(
   });
 
   if (decision.kind === "html-400") {
-    return new Response(HTML_400, {
+    return new Response(invalidRequestDocument(), {
       status: 400,
       headers: { "content-type": "text/html; charset=utf-8" },
     });
@@ -115,7 +70,12 @@ async function handleAuthorize(
     );
     if (!access.ok) {
       return new Response(
-        consentHtml(decision.host, decision.loopback, decision.params, access.message),
+        consentDocument({
+          host: decision.host,
+          loopback: decision.loopback,
+          params: decision.params,
+          errorMessage: access.message,
+        }),
         {
           status: 200,
           headers: { "content-type": "text/html; charset=utf-8" },
@@ -144,7 +104,11 @@ async function handleAuthorize(
   }
 
   return new Response(
-    consentHtml(decision.host, decision.loopback, decision.params),
+    consentDocument({
+      host: decision.host,
+      loopback: decision.loopback,
+      params: decision.params,
+    }),
     {
       status: 200,
       headers: { "content-type": "text/html; charset=utf-8" },
