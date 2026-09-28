@@ -2,7 +2,7 @@
 
 ## Intuito
 
-Financial MCP é um servidor de finanças pessoais exposto pelo Model Context Protocol (MCP). Clientes como Claude, GPT e outros modelos compatíveis com MCP consultam e registram o livro-caixa por tools, sem acesso direto ao banco.
+Financial MCP é um servidor de finanças pessoais exposto pelo Model Context Protocol (MCP). Clientes como Claude, GPT e outros modelos compatíveis com MCP consultam e registram as finanças por tools, sem acesso direto ao banco.
 
 A superfície (app Next.js e endpoint MCP) só recebe pedidos. A fonte de verdade é o PostgreSQL. Quem lê e grava é o servidor, via Drizzle.
 

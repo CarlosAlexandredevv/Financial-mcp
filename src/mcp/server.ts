@@ -26,7 +26,7 @@ export function createFinancialMcpServer(
     "adicionar_transacao",
     {
       description:
-        "Registra um lançamento de entrada ou de saída no livro-caixa do dono autenticado.",
+        "Registra um lançamento de entrada ou de saída nas finanças do dono autenticado.",
       inputSchema: z.object({
         tipo: z.unknown().optional(),
         valor: z.unknown().optional(),
@@ -71,7 +71,7 @@ export function createFinancialMcpServer(
     "buscar_saldo",
     {
       description:
-        "Informa o saldo do livro-caixa do dono autenticado. Sem ate, soma todo o histórico. Com ate em YYYY-MM-DD, soma os lançamentos ocorridos até essa data, inclusive.",
+        "Informa o saldo das finanças do dono autenticado. Sem ate, soma todo o histórico. Com ate em YYYY-MM-DD, soma os lançamentos ocorridos até essa data, inclusive.",
       inputSchema: z.object({
         ate: z.unknown().optional(),
       }),
