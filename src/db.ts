@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, inArray, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 
 import { readCents } from "@/balance/balance";
 import { closeDatabase, getDatabase } from "@/db/client";
@@ -50,6 +50,60 @@ async function sumBalance(input: {
   return readCents(row.saldoCents);
 }
 
+async function listTransactions(input: {
+  ownerKey: string;
+  de?: string;
+  ate?: string;
+  tipo?: "entrada" | "saida";
+  limite: number;
+}): Promise<{
+  transacoes: Array<{
+    id: string;
+    tipo: "entrada" | "saida";
+    amountCents: bigint;
+    data: string;
+    descricao: string;
+  }>;
+}> {
+  const conditions = [eq(transactions.ownerKey, input.ownerKey)];
+  if (input.de !== undefined) {
+    conditions.push(gte(transactions.occurredOn, input.de));
+  }
+  if (input.ate !== undefined) {
+    conditions.push(lte(transactions.occurredOn, input.ate));
+  }
+  if (input.tipo !== undefined) {
+    conditions.push(eq(transactions.type, input.tipo));
+  }
+
+  const rows = await getDatabase()
+    .select({
+      id: transactions.id,
+      tipo: transactions.type,
+      amountCents: transactions.amountCents,
+      data: transactions.occurredOn,
+      descricao: transactions.description,
+    })
+    .from(transactions)
+    .where(and(...conditions))
+    .orderBy(
+      desc(transactions.occurredOn),
+      desc(transactions.createdAt),
+      desc(transactions.id),
+    )
+    .limit(input.limite);
+
+  return {
+    transacoes: rows.map((row) => ({
+      id: row.id,
+      tipo: row.tipo,
+      amountCents: row.amountCents,
+      data: row.data,
+      descricao: row.descricao,
+    })),
+  };
+}
+
 async function deleteByOwners(ownerKeys: string[]): Promise<void> {
   if (ownerKeys.length === 0) return;
   await getDatabase()
@@ -60,6 +114,7 @@ async function deleteByOwners(ownerKeys: string[]): Promise<void> {
 export const db = {
   insertTransaction,
   sumBalance,
+  listTransactions,
   deleteByOwners,
   close: closeDatabase,
 };

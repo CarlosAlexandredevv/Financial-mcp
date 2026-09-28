@@ -5,6 +5,9 @@ import type { BalanceLoader } from "@/balance/balance";
 import { buscarSaldo } from "@/balance/balance";
 import { getBalance } from "@/balance/get-balance";
 import { addTransaction } from "@/transactions/add-transaction";
+import { getTransactions } from "@/transactions/get-transactions";
+import type { TransactionsLoader } from "@/transactions/list-transactions";
+import { listarTransacoes } from "@/transactions/list-transactions";
 import {
   formatAmount,
   parseTransaction,
@@ -14,9 +17,10 @@ const GENERIC_WRITE_ERROR = "Não foi possível registrar o lançamento.";
 
 export function createFinancialMcpServer(
   ownerKey: string,
-  deps: { loadBalance?: BalanceLoader } = {},
+  deps: { loadBalance?: BalanceLoader; loadTransactions?: TransactionsLoader } = {},
 ) {
   const loadBalance = deps.loadBalance ?? getBalance;
+  const loadTransactions = deps.loadTransactions ?? getTransactions;
   const server = new McpServer(
     {
       name: "financial-mcp",
@@ -25,7 +29,7 @@ export function createFinancialMcpServer(
     },
     {
       instructions:
-        "Estes registros são as finanças pessoais do dono. Fale em finanças ao consultar o saldo e ao registrar lançamentos.",
+        "Estes registros são as finanças pessoais do dono. Fale em finanças ao consultar o saldo, listar lançamentos e registrar entradas ou saídas.",
     },
   );
 
@@ -84,6 +88,22 @@ export function createFinancialMcpServer(
       }),
     },
     async (args) => buscarSaldo({ ownerKey, args, load: loadBalance }),
+  );
+
+  server.registerTool(
+    "listar_transacoes",
+    {
+      description:
+        "Lista lançamentos do dono autenticado, no máximo 50, da data mais recente para a mais antiga. Filtros opcionais: de e ate em YYYY-MM-DD (inclusive), tipo entrada ou saida, limite de 1 a 50 (padrão 50).",
+      inputSchema: z.object({
+        de: z.unknown().optional(),
+        ate: z.unknown().optional(),
+        tipo: z.unknown().optional(),
+        limite: z.unknown().optional(),
+      }),
+    },
+    async (args) =>
+      listarTransacoes({ ownerKey, args, load: loadTransactions }),
   );
 
   return server;
