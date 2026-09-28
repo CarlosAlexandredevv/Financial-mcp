@@ -120,6 +120,13 @@ test("validateClientMetadata", () => {
   assert.equal(
     validateClientMetadata({
       redirect_uris: ["https://app/cb"],
+      grant_types: ["authorization_code", "refresh_token"],
+    }).ok,
+    true,
+  );
+  assert.equal(
+    validateClientMetadata({
+      redirect_uris: ["https://app/cb"],
       grant_types: ["refresh_token"],
     }).ok,
     false,

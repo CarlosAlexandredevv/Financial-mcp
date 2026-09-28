@@ -35,7 +35,7 @@ export function redirectWithOAuthParams(
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined) url.searchParams.set(key, value);
   }
-  return Response.redirect(url.toString(), 302);
+  return Response.redirect(url.toString(), 303);
 }
 
 export function escapeHtml(value: string): string {

@@ -73,13 +73,16 @@ export function validateClientMetadata(
   }
 
   const grantTypes = record.grant_types;
-  if (
-    grantTypes !== undefined &&
-    (!Array.isArray(grantTypes) ||
-      grantTypes.length !== 1 ||
-      grantTypes[0] !== "authorization_code")
-  ) {
-    return { ok: false, error: "invalid_client_metadata" };
+  if (grantTypes !== undefined) {
+    if (!Array.isArray(grantTypes) || grantTypes.length === 0) {
+      return { ok: false, error: "invalid_client_metadata" };
+    }
+    const allowed = grantTypes.every(
+      (grant) => grant === "authorization_code" || grant === "refresh_token",
+    );
+    if (!allowed || !grantTypes.includes("authorization_code")) {
+      return { ok: false, error: "invalid_client_metadata" };
+    }
   }
 
   const responseTypes = record.response_types;
